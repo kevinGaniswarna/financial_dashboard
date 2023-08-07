@@ -9,4 +9,4 @@ data==0.4
 wbdata==0.3.0
 psycopg2
 tweepy
-snscrape==0.3.0
+psaw

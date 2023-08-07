@@ -1,4 +1,6 @@
 ## ACTIVATE VIRTUAL ENVIRONMENT
+## PAUSED AS API ACCESS IS BLOACKER
+
 
 ## Run in CMD
 ## .\myvenv\Scripts\activate
@@ -19,9 +21,14 @@ import wbdata as wbank
 import requests
 import tweepy
 import config
-import snscrape.modules.twitter as sntwitter
+import psycopg2, psycopg2.extras
+from pandas_datareader import data as pdr
 
-scraper = sntwitter.TwitterSearchScrape("#python")
+
+#import snscrape.modules.twitter as sntwitter
+
+#scraper = sntwitter.TwitterSearchScrape("#python")
+
 
 
 # Twitter API Authenticator ACCESS
@@ -31,36 +38,107 @@ scraper = sntwitter.TwitterSearchScrape("#python")
 # )
 # api = tweepy.API(auth)
 
-#import snscrape.modules.twitter as sntwitter
+## connect to wallstreetbets
+## connection = psycopg2.connect(host = config.DB_HOST, database = config.DB_NAME, user = config.DB_USER, password = config.DB_PASS)
+## cursor = connection.cursor(cursor_factory = psycopg2.extras.DictCursor)
+##
+##
+
+
 
 st.sidebar.header("Options")
 
-option = st.sidebar.selectbox("which dashboard", ("twitter", "wallstreetbets", "stocktwits", "chart", "pattern"  ))
+option = st.sidebar.selectbox("which dashboard", ("yfinance introductory", "backtest", "twitter", "wallstreetbets", "stocktwits", "chart", "pattern"   ),0)
 # header
 # Subheader
 
 st.header(option)
 
+if option == "yfinance introductory":
+    st.subheader("this is the yfinance dashboard")
+    yf.pdr_override()
+    symbol = st.sidebar.text_input("Symbol", value = ' ', max_chars = 10)
+    st.write(symbol)
+
+    startyear = 2020
+    startmonth = 1
+    startdate = 1
+
+    start = dt.datetime(startyear,startmonth, startdate)
+
+    now = dt.datetime.now()
+
+    df = pdr.get_data_yahoo(symbol, start, now)
+    st.write(df)
+
+## Moving Average calculations
+
+    ma =  st.sidebar.number_input("MA period", min_value = 1, max_value = 365)
+    smaString = "Sma_"+ str(ma)
+    df[smaString] = df.iloc[:,4].rolling(window=ma).mean()
+    df = df.iloc[ma:]
+    st.write(df)
+## iterate your database
+    df['Flag'] = df.iloc[:,4] > df.iloc[:,6]
+
+    numH = 0
+    numC = 0
+    for i in df.index:
+         # st.write(df["Adj Close"][i])
+         # st.write(df.iloc[:,4][i])
+         # st.write(df["smaString"][i])
+       if( df.iloc[:,4][i] > df.iloc[:,6][i] ):
+          numH += 1
+       else:
+          numC +=1
+
+    st.write("number of times higher =" + str(numH))
+    st.write("number of times Lower =" + str(numC))
+
+if option == "backtest":
+    st.subheader("this is the yfinance backtest")
+    yf.pdr_override()
+    symbol = st.sidebar.text_input("Symbol", value = ' ', max_chars = 10)
+    st.write(symbol)
+
+    startyear = 2020
+    startmonth = 1
+    startdate = 1
+
+    start = dt.datetime(startyear,startmonth, startdate)
+
+    now = dt.datetime.now()
+
+    df = pdr.get_data_yahoo(symbol, start, now)
+    st.write(df)
+
+    emasUsed[3,5,8,10,12,15,30,35,40,45,50,60]
+
+    for x in emasUsed:
+        ema = x
+        df["Ema_" + str(ema)] = round(df.iloc[:4].ewm(span = ema, adjust = False).mean(),2)
+
+    st.write(df.tail())
 # SENTIMENTAL ANALYSIS DASHBOARD VIA TWITTER
 
 if option == "twitter":
     st.subheader("this is the twitter dashboard")
-    for username in config.TWITTER_USERNAMES:
-        user = api.get_user(screen_name = username)
-        tweets = api.user_timeline(user_id = username)
-        st.write(user.id)
-    # get user avatar
-        st.image(user.profle_image_url)
-    # st.write(tweets)
-        for tweet in tweets:
-            if '$' in tweet.text:
-                words = tweet.text.split(' ')
-                for word in words:
-                    if word.startswith('$') and word[1:].isalpha():
-                        symbol = word[1:]
-                        st.write(symbol)
-                        st.write(tweet.text)
-                        st.image(f"https://finviz.com/quote.ashx?t={symbol}&p=d")
+    # for username in config.TWITTER_USERNAMES:
+    #     user = api.get_user(username)
+    #     tweets = api.user_timeline(username)
+    #     st.write(user.id)
+    # # get user avatar
+    #     st.image(user.profle_image_url)
+    # # st.write(tweets)
+    #     for tweet in tweets:
+    #         if '$' in tweet.text:
+    #             words = tweet.text.split(' ')
+    #             for word in words:
+    #                 if word.startswith('$') and word[1:].isalpha():
+    #                     symbol = word[1:]
+    #                     st.write(symbol)
+    #                     st.write(tweet.text)
+    #                     st.image(f"https://finviz.com/quote.ashx?t={symbol}&p=d")
 
 if option == "wallstreetbets":
     st.subheader("this is the wallstreetbets dashboard")
@@ -73,7 +151,7 @@ if option == "pattern":
 
 
 if option == "stocktwits":
-    symbol = st.sidebar.text_input("Symbol", value = 'AAPL', max_chars = 10)
+    symbol = st.sidebar.text_input("Symbol", value = ' ', max_chars = 10)
 
     st.subheader("this is the stocktwits dashboard")
     r = requests.get(f"https://api.stocktwits.com/api/2/streams/symbol/{symbol}.json")
