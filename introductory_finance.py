@@ -373,19 +373,17 @@ if option == "stock screener":
 
     filePath = r"C:\Users\Kevin Ganis\Documents\kevin personal doc\financial_Dashboard\RichardStocks.xlsx"
     stocklist = pd.read_excel(filePath)
-    stocklist = stocklist.head()
     exportList = pd.DataFrame(columns = ["Stock","RS_Rating", "50 Day MA", "150 Day MA", "200 Day MA", "52 Week Low", "52 week High"])
+    no_data_stock = pd.DataFrame(columns = ["Stock"])
     st.write("initial export list are as follows:")
     st.write(exportList)
 
     for i in stocklist.index :
         stock = str(stocklist["Symbol"][i])
-        st.write(stock)
         RS_rating = stocklist["RS Rating"][i]
         try:
             df = pdr.get_data_yahoo(stock, start, now)
-            st.write(df)
-            smaUsed = [50,150, 200]
+            smaUsed = [50, 150, 200]
 
             for x in smaUsed:
                 sma=x
@@ -452,22 +450,20 @@ if option == "stock screener":
 
 
             ## DEBUG AROUND HERE REQUIRED
-            st.write([cond_1, cond_2, cond_3, cond_4, cond_5, cond_6, cond_7, cond_8])
-            st.write(cond_1 and cond_2 and cond_3 and cond_4 and cond_5 and cond_6 and cond_7 and cond_8)
-            row =  {'Stock': stock, "RS_Rating": RS_Rating, "50 Day MA": moving_average_50, "150 Day Ma": moving_average_150, "200 Day MA": moving_average_200, "52 Week Low": low_of_52week, "52 week High": high_of_52week}
-            st.write(row)
-
             if (cond_1 and cond_2 and cond_3 and cond_4 and cond_5 and cond_6 and cond_7 and cond_8):
-                row = {'Stock': stock, "RS_Rating": RS_Rating, "50 Day MA": moving_average_50, "150 Day Ma": moving_average_150, "200 Day MA": moving_average_200, "52 Week Low": low_of_52week, "52 week High": high_of_52week}
-                exportList = exportList.append(row, ignore_index=True)
+                row = {'Stock': stock, "RS_Rating": RS_rating, "50 Day MA": moving_average_50, "150 Day MA": moving_average_150, "200 Day MA": moving_average_200, "52 Week Low": low_of_52_week, "52 week High": high_of_52_week}
+                exportList = exportList._append(row, ignore_index=True)
             else:
                 exportList = exportList
 
         except Exception:
-            st.write("No data on " + stock)
+            row = {'Stock': stock}
+            no_data_stock = no_data_stock._append(row, ignore_index=True)
 
     st.write("final export list are as follows: ")
     st.write(exportList)
+    st.write("stock missing from Yahoo Finance are as follows: ")
+    st.write(no_data_stock)
     # write output exportlist into excel
     newFile=os.path.dirname(filePath)+"\ScreenOutput.xlsx"
     writer= pd.ExcelWriter(newFile)
