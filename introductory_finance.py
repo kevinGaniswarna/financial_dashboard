@@ -11,6 +11,9 @@
 
 import streamlit as st;
 import os;
+import smtplib;
+import imghdr;
+import email.message import EmailMessage;
 import pandas as pd;
 import yfinance as yf;
 import datetime as dt;
@@ -52,7 +55,9 @@ from tkinter.filedialog import askopenfilename
 
 st.sidebar.header("Options")
 
-option = st.sidebar.selectbox("which dashboard", ("yfinance introductory", "backtest", "stock screener", "twitter", "wallstreetbets", "stocktwits", "chart", "pattern"   ),2)
+option = st.sidebar.selectbox("which dashboard", ("yfinance introductory", "backtest", "stock screener",
+                                                  "green line calculator", "Auto Email Alerts" , "twitter",
+                                                  "wallstreetbets", "stocktwits", "chart", "pattern"   ),4)
 # header
 # Subheader
 
@@ -465,10 +470,62 @@ if option == "stock screener":
     st.write("stock missing from Yahoo Finance are as follows: ")
     st.write(no_data_stock)
     # write output exportlist into excel
-    newFile=os.path.dirname(filePath)+"\ScreenOutput.xlsx"
-    writer= pd.ExcelWriter(newFile)
-    exportList.to_excel(writer,"Sheet1")
+    newFile=os.path.dirname(filePath)+"\ScreenOutput.csv"
+    exportList.to_csv(newFile, index=False)
     #writer.save()
+
+if option == "green line calculator":
+    st.subheader("this is the green line calculator dashboard")
+    yf.pdr_override()
+    start = dt.datetime(1980,12,1)
+    now = dt.datetime.now()
+    stock = st.sidebar.text_input("Symbol", value = ' ', max_chars = 10)
+
+    ## Initialize green line datetime
+    glDate = 0
+    lastGLV = 0
+    currentDate = ""
+    currentGLV = 0
+
+    df = pdr.get_data_yahoo(stock, start,now)
+    ## gets rid of all weird values of Stock price hiking up out of no where. I.e. TWLO price hiking up. But this was not
+
+    df.drop(df[df["Volume"]<1000].index, inplace = True)
+
+    dfmonth  = df.groupby(pd.Grouper(freq = "M"))["High"].max()
+
+    for index, value in dfmonth.items():
+        if (value > currentGLV):
+            currentGLV = value
+            currentDate = index
+            ## initialize the counter (3 months checker)
+            counter = 0
+        if (value < currentGLV):
+            counter += 1
+            if (counter == 3 and ((index.month != now.month) or (index.year != now.year))) :
+                if (currentGLV != lastGLV):
+                    #st.write(currentGLV)
+                    glDate = currentDate
+                    lastGLV = currentGLV
+                    counter = 0
+    st.write(dfmonth)
+    if lastGLV == 0:
+        message = stock + " has not formed a green line yet"
+        st.write(message)
+    else:
+        message = ("current Green Line: " + str(currentGLV) + " on " + str(currentDate))
+        message1 = ("last Green Line: " + str(lastGLV) + " on " + str(glDate))
+
+        st.write(message)
+        st.write(message1)
+
+
+
+if option == "Auto Email Alerts"
+
+EMAIL_ADDRESS = os.environ.get('EMAIL_USER')
+EMAIL_PASSWORD = os.environ.get('EMAIL_PASS')
+
 
 if option == "twitter":
     st.subheader("this is the twitter dashboard")
