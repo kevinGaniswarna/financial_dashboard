@@ -523,9 +523,6 @@ if option == "green line calculator":
 
 if option == "Auto Email Alerts"
 
-EMAIL_ADDRESS = os.environ.get('EMAIL_USER')
-EMAIL_PASSWORD = os.environ.get('EMAIL_PASS')
-
 
 if option == "twitter":
     st.subheader("this is the twitter dashboard")
